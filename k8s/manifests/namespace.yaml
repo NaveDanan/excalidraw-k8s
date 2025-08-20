@@ -1,0 +1,9 @@
+# Reminder: Main task is to make Excalidraw suitable for K8s deployment with Helm charts
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: excalidraw
+  labels:
+    name: excalidraw
+    app.kubernetes.io/name: excalidraw
+    app.kubernetes.io/component: namespace

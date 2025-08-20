@@ -1,0 +1,145 @@
+# Default values for excalidraw.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Reminder: Main task is to make Excalidraw suitable for K8s deployment with Helm charts
+
+replicaCount: 2
+
+image:
+  repository: excalidraw
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 2000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # nginx.ingress.kubernetes.io/cert-manager.cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: excalidraw.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: excalidraw-tls
+      hosts:
+        - excalidraw.local
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - excalidraw
+        topologyKey: kubernetes.io/hostname
+
+# Application configuration
+config:
+  # Environment variables for the application
+  environment: production
+  # Add any application-specific configuration here
+  logLevel: info
+
+# Health check configuration
+healthCheck:
+  enabled: true
+  path: "/"
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+# Liveness probe configuration
+livenessProbe:
+  enabled: true
+  path: "/"
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Readiness probe configuration
+readinessProbe:
+  enabled: true
+  path: "/"
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+# Network policy configuration (optional)
+networkPolicy:
+  enabled: false
+  ingress:
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 80
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1

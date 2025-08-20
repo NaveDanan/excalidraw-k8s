@@ -1,0 +1,99 @@
+# Reminder: Main task is to make Excalidraw suitable for K8s deployment with Helm charts
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: excalidraw
+  namespace: excalidraw
+  labels:
+    app.kubernetes.io/name: excalidraw
+    app.kubernetes.io/instance: excalidraw
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: excalidraw
+    app.kubernetes.io/managed-by: kubectl
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: excalidraw
+      app.kubernetes.io/instance: excalidraw
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: excalidraw
+        app.kubernetes.io/instance: excalidraw
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/component: frontend
+    spec:
+      serviceAccountName: excalidraw
+      securityContext:
+        fsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: excalidraw
+        image: excalidraw:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: LOG_LEVEL
+          value: "info"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+        volumeMounts:
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+        - name: nginx-run
+          mountPath: /var/run
+      volumes:
+      - name: nginx-cache
+        emptyDir: {}
+      - name: nginx-run
+        emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - excalidraw
+              topologyKey: kubernetes.io/hostname

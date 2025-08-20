@@ -1,0 +1,14 @@
+# Reminder: Main task is to make Excalidraw suitable for K8s deployment with Helm charts
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "excalidraw.fullname" . }}
+  labels:
+    {{- include "excalidraw.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "excalidraw.selectorLabels" . | nindent 6 }}
+{{- end }}

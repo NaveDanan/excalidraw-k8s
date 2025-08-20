@@ -1,0 +1,110 @@
+# Reminder: Main task is to make Excalidraw suitable for K8s deployment with Helm charts
+
+# Development values for Excalidraw Helm chart
+# Use this for development/testing environments
+
+replicaCount: 1
+
+image:
+  repository: excalidraw
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 2000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: excalidraw.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Development configuration
+config:
+  environment: development
+  logLevel: debug
+
+# Relaxed health checks for development
+healthCheck:
+  enabled: true
+  path: "/"
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 5
+  successThreshold: 1
+
+livenessProbe:
+  enabled: true
+  path: "/"
+  initialDelaySeconds: 60
+  periodSeconds: 60
+  timeoutSeconds: 10
+  failureThreshold: 5
+
+readinessProbe:
+  enabled: true
+  path: "/"
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+  successThreshold: 1
+
+# Network policy disabled for development
+networkPolicy:
+  enabled: false
+
+# Pod disruption budget disabled for single replica
+podDisruptionBudget:
+  enabled: false
