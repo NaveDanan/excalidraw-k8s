@@ -1,0 +1,52 @@
+{{- if .Values.room.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "excalidraw.fullname" . }}-room
+  labels: {{- include "excalidraw.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.room.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "excalidraw.name" . }}
+      app.kubernetes.io/component: room
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "excalidraw.name" . }}
+        app.kubernetes.io/component: room
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: room
+          image: "{{ .Values.room.image.repository }}:{{ .Values.room.image.tag }}"
+          imagePullPolicy: {{ .Values.room.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            # Socket.IO/rooms server commonly exposes PORT; 80 is default in image.
+            - name: NODE_ENV
+              value: "production"
+            {{- if and .Values.room.redis.enabled .Values.room.redis.url }}
+            - name: REDIS_URL
+              value: "{{ .Values.room.redis.url }}"
+            {{- end }}
+            {{- range .Values.room.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+{{- end }}

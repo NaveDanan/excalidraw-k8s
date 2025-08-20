@@ -1,0 +1,17 @@
+{{- if .Values.room.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "excalidraw.fullname" . }}-room
+  labels: {{- include "excalidraw.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: {{ .Values.service.roomPort }}
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: {{ include "excalidraw.name" . }}
+    app.kubernetes.io/component: room
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

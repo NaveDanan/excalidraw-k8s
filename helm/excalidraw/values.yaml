@@ -1,0 +1,48 @@
+replicaCount: 1
+
+image:
+  repository: excalidraw/excalidraw
+  tag: latest
+  pullPolicy: IfNotPresent
+
+room:
+  enabled: true
+  image:
+    repository: excalidraw/excalidraw-room
+    tag: latest
+    pullPolicy: IfNotPresent
+  # Single replica is fine without Redis. For multiple replicas, enable Redis.
+  replicaCount: 1
+  redis:
+    enabled: false
+    # If using an external or in-cluster Redis service, set REDIS_URL (e.g., redis://redis:6379)
+    url: ""
+  extraEnv: []
+  # Example:
+  # extraEnv:
+  #   - name: RATE_LIMIT_WINDOW_MS
+  #     value: "60000"
+
+service:
+  type: ClusterIP
+  port: 80
+  roomPort: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: excalidraw.localtest.me
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  # - secretName: excalidraw-tls
+  #   hosts:
+  #     - excalidraw.example.com
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
